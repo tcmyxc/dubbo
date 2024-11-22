@@ -52,6 +52,8 @@ public abstract class AbstractConnectionClient extends AbstractClient {
         super(url, handler);
     }
 
+    protected AbstractConnectionClient() {}
+
     public final void increase() {
         COUNTER_UPDATER.set(this, 1L);
     }
@@ -59,22 +61,27 @@ public abstract class AbstractConnectionClient extends AbstractClient {
     /**
      * Increments the reference count by 1.
      */
-    public final AbstractConnectionClient retain() {
+    public final boolean retain() {
         long oldCount = COUNTER_UPDATER.getAndIncrement(this);
         if (oldCount <= 0) {
             COUNTER_UPDATER.getAndDecrement(this);
-            throw new AssertionError("This instance has been destroyed");
+            logger.info(
+                    "Retain failed, because connection " + remote
+                            + " has been destroyed but not yet removed, will create a new one instead."
+                            + " Check logs below to confirm that this connection finally gets removed to make sure there's no potential memory leak!");
+            return false;
         }
-        return this;
+        return true;
     }
 
     /**
      * Decreases the reference count by 1 and calls {@link this#destroy} if the reference count reaches 0.
      */
-    public final boolean release() {
+    public boolean release() {
         long remainingCount = COUNTER_UPDATER.decrementAndGet(this);
 
         if (remainingCount == 0) {
+            logger.info("Destroying connection to {}, because the reference count reaches 0", remote);
             destroy();
             return true;
         } else if (remainingCount <= -1) {
@@ -98,12 +105,21 @@ public abstract class AbstractConnectionClient extends AbstractClient {
     public abstract boolean isAvailable();
 
     /**
-     * create connecting promise.
+     * add a listener that will be executed when a connection is established.
+     *
+     * @param func execute function
      */
-    public abstract void createConnectingPromise();
+    public abstract void addConnectedListener(Runnable func);
 
     /**
-     * add the listener of close connection event.
+     * Add a listener that will be executed when the connection is disconnected.
+     *
+     * @param func execute function
+     */
+    public abstract void addDisconnectedListener(Runnable func);
+
+    /**
+     * add a listener that will be executed when the connection is closed.
      *
      * @param func execute function
      */
@@ -135,7 +151,7 @@ public abstract class AbstractConnectionClient extends AbstractClient {
      * @param generalizable generalizable
      * @return Dubbo Channel or NIOChannel such as NettyChannel
      */
-    public abstract Object getChannel(Boolean generalizable);
+    public abstract <T> T getChannel(Boolean generalizable);
 
     /**
      * Get counter

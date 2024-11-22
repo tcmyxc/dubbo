@@ -112,39 +112,11 @@
         <artifactId>dubbo-configcenter-nacos</artifactId>
         <version>${project.version}</version>
       </dependency>
-
-      <!-- dependencies -->
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-dependencies</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-dependencies-zookeeper</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-dependencies-zookeeper-curator5</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-      </dependency>
-
       <!-- dependencies-bom -->
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-dependencies-bom</artifactId>
         <version>${project.version}</version>
-      </dependency>
-
-      <!-- distribution -->
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-distribution</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
       </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
@@ -205,11 +177,6 @@
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-metadata-report-nacos</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-metadata-report-redis</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -294,11 +261,6 @@
       <!-- plugin -->
       <dependency>
         <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-plugin</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-auth</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -336,17 +298,17 @@
       </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-rest-servlet</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-rest-spring</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-triple-servlet</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.dubbo</groupId>
+        <artifactId>dubbo-triple-websocket</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -408,6 +370,11 @@
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-remoting-http3</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.dubbo</groupId>
+        <artifactId>dubbo-remoting-websocket</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -477,11 +444,6 @@
         <artifactId>dubbo-serialization-fastjson2</artifactId>
         <version>${project.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-serialization-jdk</artifactId>
-        <version>${project.version}</version>
-      </dependency>
 
       <!-- spring-boot -->
       <dependency>
@@ -493,6 +455,11 @@
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-spring-boot-actuator</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.dubbo</groupId>
+        <artifactId>dubbo-spring-boot-actuator-autoconfigure</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -513,12 +480,12 @@
       </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-spring-boot-actuator-compatible</artifactId>
+        <artifactId>dubbo-spring-boot-autoconfigure-compatible</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-spring-boot-autoconfigure-compatible</artifactId>
+        <artifactId>dubbo-spring-boot-actuator-autoconfigure-compatible</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -533,7 +500,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-spring-boot-interceptor</artifactId>
+        <artifactId>dubbo-spring-boot</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -541,17 +508,6 @@
         <artifactId>dubbo-spring-boot-starters</artifactId>
         <version>${project.version}</version>
         <type>pom</type>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-observability-spring-boot-starters</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-observability-spring-boot-autoconfigure</artifactId>
-        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
@@ -576,11 +532,6 @@
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-zookeeper-spring-boot-starter</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

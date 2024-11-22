@@ -30,7 +30,7 @@
   <properties>
     <skip_maven_deploy>false</skip_maven_deploy>
     <zookeeper_version>3.7.2</zookeeper_version>
-    <curator5_version>5.1.0</curator5_version>
+    <curator5_version>5.7.1</curator5_version>
   </properties>
   <dependencies>
     <dependency>
@@ -46,11 +46,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.dubbo</groupId>
-      <artifactId>dubbo-common</artifactId>
-      <version>${project.parent.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-framework</artifactId>
