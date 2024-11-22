@@ -18,7 +18,11 @@ package org.apache.dubbo.xds.bootstrap;
 
 import javax.annotation.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
