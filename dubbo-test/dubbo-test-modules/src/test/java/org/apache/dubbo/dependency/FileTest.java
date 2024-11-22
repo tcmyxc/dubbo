@@ -238,8 +238,8 @@ class FileTest {
                 .filter(doc -> !Objects.equals("pom", doc.elementText("packaging")))
                 .filter(doc -> Objects.isNull(doc.element("properties"))
                         || (!Objects.equals("true", doc.element("properties").elementText("skip_maven_deploy"))
-                        && !Objects.equals(
-                        "true", doc.element("properties").elementText("maven.deploy.skip"))))
+                                && !Objects.equals(
+                                        "true", doc.element("properties").elementText("maven.deploy.skip"))))
                 .map(doc -> doc.elementText("artifactId"))
                 .sorted()
                 .collect(Collectors.toList());
@@ -326,8 +326,8 @@ class FileTest {
                 .map(Document::getRootElement)
                 .filter(doc -> Objects.isNull(doc.element("properties"))
                         || (!Objects.equals("true", doc.element("properties").elementText("skip_maven_deploy"))
-                        && !Objects.equals(
-                        "true", doc.element("properties").elementText("maven.deploy.skip"))))
+                                && !Objects.equals(
+                                        "true", doc.element("properties").elementText("maven.deploy.skip"))))
                 .filter(doc -> !Objects.equals("pom", doc.elementText("packaging")))
                 .map(doc -> doc.elementText("artifactId"))
                 .sorted()
@@ -433,8 +433,8 @@ class FileTest {
                 .map(Document::getRootElement)
                 .filter(doc -> Objects.isNull(doc.element("properties"))
                         || (!Objects.equals("true", doc.element("properties").elementText("skip_maven_deploy"))
-                        && !Objects.equals(
-                        "true", doc.element("properties").elementText("maven.deploy.skip"))))
+                                && !Objects.equals(
+                                        "true", doc.element("properties").elementText("maven.deploy.skip"))))
                 .filter(doc -> !Objects.equals("pom", doc.elementText("packaging")))
                 .map(doc -> doc.elementText("artifactId"))
                 .sorted()
@@ -709,7 +709,7 @@ class FileTest {
                 if (content != null && content.contains("@SPI")) {
                     String absolutePath = path.getAbsolutePath();
                     absolutePath = absolutePath.substring(absolutePath.lastIndexOf(
-                            "src" + File.separator + "main" + File.separator + "java" + File.separator)
+                                    "src" + File.separator + "main" + File.separator + "java" + File.separator)
                             + ("src" + File.separator + "main" + File.separator + "java" + File.separator).length());
                     absolutePath = absolutePath.substring(0, absolutePath.lastIndexOf(".java"));
                     absolutePath = absolutePath.replaceAll(Matcher.quoteReplacement(File.separator), ".");
@@ -736,11 +736,11 @@ class FileTest {
                             + "META-INF" + File.separator + "dubbo" + File.separator + "internal" + File.separator)) {
                 String absolutePath = path.getAbsolutePath();
                 absolutePath = absolutePath.substring(absolutePath.lastIndexOf("src" + File.separator + "main"
-                        + File.separator + "resources" + File.separator + "META-INF" + File.separator + "dubbo"
-                        + File.separator + "internal" + File.separator)
+                                + File.separator + "resources" + File.separator + "META-INF" + File.separator + "dubbo"
+                                + File.separator + "internal" + File.separator)
                         + ("src" + File.separator + "main" + File.separator + "resources" + File.separator + "META-INF"
-                        + File.separator + "dubbo" + File.separator + "internal" + File.separator)
-                        .length());
+                                        + File.separator + "dubbo" + File.separator + "internal" + File.separator)
+                                .length());
                 absolutePath = absolutePath.replaceAll(Matcher.quoteReplacement(File.separator), ".");
                 spis.put(path, absolutePath);
             }

@@ -172,7 +172,7 @@
     <grpc_version>1.54.0</grpc_version>
     <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
     <dubbo-shared-resources.version>1.0.0</dubbo-shared-resources.version>
-
+    <palantirJavaFormat.version>2.38.0</palantirJavaFormat.version>
     <revision>3.3.3-SNAPSHOT</revision>
   </properties>
 
@@ -854,36 +854,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-
-    <profile>
-      <id>jdk9-jdk11-spotless</id>
-      <activation>
-        <jdk>[1.8, 11)</jdk>
-      </activation>
-      <properties>
-        <palantirJavaFormat.version>1.1.0</palantirJavaFormat.version>
-      </properties>
-    </profile>
-
-    <profile>
-      <id>jdk11-jdk21-spotless</id>
-      <activation>
-        <jdk>[11, 21)</jdk>
-      </activation>
-      <properties>
-        <palantirJavaFormat.version>2.28.0</palantirJavaFormat.version>
-      </properties>
-    </profile>
-
-    <profile>
-      <id>jdk21-spotless</id>
-      <activation>
-        <jdk>[21,)</jdk>
-      </activation>
-      <properties>
-        <palantirJavaFormat.version>2.39.0</palantirJavaFormat.version>
-      </properties>
     </profile>
 
     <profile>
