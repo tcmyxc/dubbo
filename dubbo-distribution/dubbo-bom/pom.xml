@@ -118,14 +118,6 @@
         <artifactId>dubbo-dependencies-bom</artifactId>
         <version>${project.version}</version>
       </dependency>
-
-      <!-- distribution -->
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-distribution</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-      </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo</artifactId>
@@ -267,11 +259,6 @@
       </dependency>
 
       <!-- plugin -->
-      <dependency>
-        <groupId>org.apache.dubbo</groupId>
-        <artifactId>dubbo-plugin</artifactId>
-        <version>${project.version}</version>
-      </dependency>
       <dependency>
         <groupId>org.apache.dubbo</groupId>
         <artifactId>dubbo-auth</artifactId>
