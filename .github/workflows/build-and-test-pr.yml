@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v4
+        uses: a ctions/checkout@v4
       - name: "Setup maven"
         uses: actions/setup-java@v4
         with:
@@ -210,7 +210,7 @@ jobs:
           ls -al ${{ github.workspace }}/.tmp/zookeeper/apache-zookeeper-bin.tar.gz
 
   unit-test:
-    needs: [check-format, build-source, unit-test-prepare]
+    needs: [check-format, unit-test-prepare]
     name: "Unit Test On ubuntu-latest"
     runs-on: ubuntu-latest
     strategy:
