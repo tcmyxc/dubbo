@@ -531,8 +531,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           version: v0.6.0
           verbose: true
-          root_dir: ${{ github.workspace }}/dubbo
-          working-directory: ${{ github.workspace }}/dubbo
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
