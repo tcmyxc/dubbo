@@ -514,7 +514,7 @@ jobs:
       - name: "Remove old test result"
         run: |
           rm -rf ${{ github.workspace }}/dubbo-samples
-          mv ${{ github.workspace }}/dubbo ${{ github.workspace }}
+          mv ${{ github.workspace }}/dubbo/* ${{ github.workspace }}/
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v4
         with:
@@ -563,7 +563,7 @@ jobs:
       - name: "Remove old test result"
         run: |
           rm -rf ${{ github.workspace }}/dubbo-integration-cases
-          mv ${{ github.workspace }}/dubbo ${{ github.workspace }}
+          mv ${{ github.workspace }}/dubbo/* ${{ github.workspace }}/
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v4
         with:
