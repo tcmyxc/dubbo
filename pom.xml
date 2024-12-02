@@ -372,6 +372,8 @@
           <systemProperties>
             <!-- common shared -->
           </systemProperties>
+          <!-- Activate the use of TCP to transmit events to the plugin to fix Corrupted STDOUT issue -->
+          <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
         </configuration>
       </plugin>
       <plugin>
