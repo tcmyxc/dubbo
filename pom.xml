@@ -135,7 +135,6 @@
     <argline>-server -Xms256m -Xmx512m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m -Dfile.encoding=UTF-8
       -Djava.net.preferIPv4Stack=true</argline>
     <arguments />
-    <jacocoArgLine />
     <profile.name>oss</profile.name>
     <updateReleaseInfo>true</updateReleaseInfo>
     <skip_maven_deploy>false</skip_maven_deploy>
@@ -346,9 +345,6 @@
             <goals>
               <goal>prepare-agent</goal>
             </goals>
-            <configuration>
-              <propertyName>jacocoArgLine</propertyName>
-            </configuration>
           </execution>
           <execution>
             <id>report-aggregate</id>
@@ -373,7 +369,6 @@
         <configuration>
           <useSystemClassLoader>true</useSystemClassLoader>
           <forkCount>1</forkCount>
-          <argLine>${argline} ${jacocoArgLine}</argLine>
           <systemProperties>
             <!-- common shared -->
           </systemProperties>
@@ -794,27 +789,11 @@
       <activation>
         <jdk>[15,</jdk>
       </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <useSystemClassLoader>true</useSystemClassLoader>
-              <forkCount>1</forkCount>
-              <argLine>${argline} ${jacocoArgLine}
-                                --add-opens java.base/java.lang=ALL-UNNAMED
-                                --add-opens java.base/java.math=ALL-UNNAMED
-                                --add-opens java.base/java.util=ALL-UNNAMED</argLine>
-              <systemProperties>
-                <!-- common shared -->
-              </systemProperties>
-              <!-- Activate the use of TCP to transmit events to the plugin to fix Corrupted STDOUT issue -->
-              <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
+      <properties>
+        <argLine>--add-opens java.base/java.lang=ALL-UNNAMED
+          --add-opens java.base/java.math=ALL-UNNAMED
+          --add-opens java.base/java.util=ALL-UNNAMED</argLine>
+      </properties>
     </profile>
     <profile>
       <id>jdk15ge-simple</id>
@@ -826,7 +805,6 @@
             <configuration>
               <useSystemClassLoader>true</useSystemClassLoader>
               <forkCount>1</forkCount>
-              <argLine>${argline} ${jacocoArgLine}</argLine>
               <systemProperties>
                 <!-- common shared -->
               </systemProperties>
