@@ -108,8 +108,6 @@ jobs:
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
-        with:
-          path: dubbo
       - name: "Set up JDK"
         uses: actions/setup-java@v4
         with:
@@ -135,7 +133,6 @@ jobs:
         run: rm -rf ~/.m2/repository/org/apache/dubbo
       - name: "Build Dubbo with maven"
         run: |
-          cd ./dubbo
           ./mvnw ${{ env.MAVEN_ARGS }} clean install -Psources,'!demo',skip-spotless,checkstyle -Dmaven.test.skip=true -DembeddedZookeeperPath=${{ github.workspace }}/.tmp/zookeeper
       - name: "Save dubbo cache"
         uses: actions/cache/save@v4
@@ -171,7 +168,7 @@ jobs:
       - name: "Calculate Dubbo Version"
         id: dubbo-version
         run: |
-          REVISION=`awk '/<revision>[^<]+<\/revision>/{gsub(/<revision>|<\/revision>/,"",$1);print $1;exit;}' ./dubbo/pom.xml`
+          REVISION=`awk '/<revision>[^<]+<\/revision>/{gsub(/<revision>|<\/revision>/,"",$1);print $1;exit;}' ./pom.xml`
           echo "version=$REVISION" >> $GITHUB_OUTPUT
           echo "dubbo version: $REVISION"
 
