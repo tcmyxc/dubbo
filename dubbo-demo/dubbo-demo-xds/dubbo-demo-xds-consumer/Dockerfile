@@ -16,6 +16,7 @@
 FROM openjdk:8-jdk
 ARG ARTIFACT
 ADD ./target/$ARTIFACT app.jar
+ADD ./src/main/resources/bootstrap.json bootstrap.json
 CMD java -jar /app.jar
 EXPOSE 50050
 EXPOSE 31000

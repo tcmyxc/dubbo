@@ -16,7 +16,7 @@
  */
 package org.apache.dubbo.xds;
 
-public final class XdsInitializationException extends Exception {
+public final class XdsInitializationException extends RuntimeException {
 
     public XdsInitializationException(String message) {
         super(message);

@@ -136,13 +136,13 @@ public class CdsUpdate implements ResourceUpdate {
             long minRingSize,
             long maxRingSize,
             int choiceCount,
-            @Nullable String edsServiceName,
-            @Nullable String dnsHostName,
-            @Nullable Bootstrapper.ServerInfo lrsServerInfo,
-            @Nullable Long maxConcurrentRequests,
-            @Nullable UpstreamTlsContext upstreamTlsContext,
-            @Nullable List<String> prioritizedClusterNames,
-            @Nullable OutlierDetection outlierDetection) {
+            String edsServiceName,
+            String dnsHostName,
+            Bootstrapper.ServerInfo lrsServerInfo,
+            Long maxConcurrentRequests,
+            UpstreamTlsContext upstreamTlsContext,
+            List<String> prioritizedClusterNames,
+            OutlierDetection outlierDetection) {
         this.clusterName = clusterName;
         this.clusterType = clusterType;
         this.lbPolicyConfig = lbPolicyConfig;
@@ -154,7 +154,8 @@ public class CdsUpdate implements ResourceUpdate {
         this.lrsServerInfo = lrsServerInfo;
         this.maxConcurrentRequests = maxConcurrentRequests;
         this.upstreamTlsContext = upstreamTlsContext;
-        this.prioritizedClusterNames = Collections.unmodifiableList(new ArrayList<>(prioritizedClusterNames));
+        this.prioritizedClusterNames = Collections.unmodifiableList(
+                new ArrayList<>(prioritizedClusterNames == null ? Collections.emptyList() : prioritizedClusterNames));
         this.outlierDetection = outlierDetection;
     }
 

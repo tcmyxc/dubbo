@@ -19,24 +19,22 @@ package org.apache.dubbo.xds.bootstrap;
 import org.apache.dubbo.xds.XdsInitializationException;
 import org.apache.dubbo.xds.XdsLogger;
 import org.apache.dubbo.xds.XdsLogger.XdsLogLevel;
-import org.apache.dubbo.xds.bootstrap.EnvoyProtoData.Node;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.grpc.Internal;
 import io.grpc.InternalLogId;
-import io.grpc.internal.JsonParser;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -44,9 +42,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class Bootstrapper {
 
     public static final String XDSTP_SCHEME = "xdstp:";
+
+    private static Bootstrapper INSTANCE = null;
     private static final String BOOTSTRAP_PATH_SYS_ENV_VAR = "GRPC_XDS_BOOTSTRAP";
     private static final String BOOTSTRAP_CONFIG_SYS_ENV_VAR = "GRPC_XDS_BOOTSTRAP_CONFIG";
-    private static final String DEFAULT_BOOTSTRAP_PATH = "/etc/istio/proxy/grpc-bootstrap.json";
+    private static final String DEFAULT_BOOTSTRAP_PATH = "/bootstrap.json";
     public static final String CLIENT_FEATURE_DISABLE_OVERPROVISIONING = "envoy.lb.does_not_support_overprovisioning";
     public static final String CLIENT_FEATURE_RESOURCE_IN_SOTW = "xds.config.resource-in-sotw";
     private static final String SERVER_FEATURE_IGNORE_RESOURCE_DELETION = "ignore_resource_deletion";
@@ -56,7 +56,7 @@ public class Bootstrapper {
     protected FileReader reader = LocalFileReader.INSTANCE;
 
     @VisibleForTesting
-    public String bootstrapPathFromEnvVar = System.getenv(BOOTSTRAP_PATH_SYS_ENV_VAR);
+    public String bootstrapPathFromEnvVar = null;
 
     @VisibleForTesting
     public String bootstrapConfigFromEnvVar = System.getenv(BOOTSTRAP_CONFIG_SYS_ENV_VAR);
@@ -65,7 +65,18 @@ public class Bootstrapper {
         logger = XdsLogger.withLogId(InternalLogId.allocate("bootstrapper", null));
     }
 
-    public BootstrapInfo bootstrap() throws XdsInitializationException {
+    public static Bootstrapper getInstance() {
+        if (INSTANCE == null) {
+            synchronized (Bootstrapper.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new Bootstrapper();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
+    public BootstrapInfo bootstrap() {
         String jsonContent;
         try {
             jsonContent = getJsonContent();
@@ -75,31 +86,37 @@ public class Bootstrapper {
 
         if (jsonContent == null) {
             // TODO:try loading from Dubbo control panel and user specified URL
+            return null;
         }
 
-        Map<String, ?> rawBootstrap;
+        JsonNode jsonNode;
         try {
-            rawBootstrap = (Map<String, ?>) JsonParser.parse(jsonContent);
+            ObjectMapper mapper = new ObjectMapper();
+            jsonNode = mapper.readTree(jsonContent);
         } catch (IOException e) {
             throw new XdsInitializationException("Failed to parse JSON", e);
         }
-
-        logger.log(XdsLogLevel.DEBUG, "Bootstrap configuration:\n{0}", rawBootstrap);
-        return null;
+        logger.log(XdsLogLevel.DEBUG, "Bootstrap configuration:\n{0}", jsonNode);
+        return buildBootstrapInfo(jsonNode);
     }
 
     private String getJsonContent() throws IOException, XdsInitializationException {
         String jsonContent;
         String filePath = null;
 
-        // Check the default path
-        if (Files.exists(Paths.get(DEFAULT_BOOTSTRAP_PATH))) {
-            filePath = DEFAULT_BOOTSTRAP_PATH;
-        } else if (Files.exists(Paths.get(bootstrapPathFromEnvVar))) {
-            // Check environment variable and system property
-            filePath = bootstrapPathFromEnvVar;
+        // Get the path of the bootstrap config via environment variable and system property
+        bootstrapPathFromEnvVar = System.getenv(BOOTSTRAP_PATH_SYS_ENV_VAR);
+        if (bootstrapPathFromEnvVar == null) {
+            bootstrapPathFromEnvVar = System.getProperty(BOOTSTRAP_PATH_SYS_ENV_VAR);
         }
 
+        // Check environment variable and system property
+        if (bootstrapPathFromEnvVar != null && Files.exists(Paths.get(bootstrapPathFromEnvVar))) {
+            filePath = bootstrapPathFromEnvVar;
+        } else if (Files.exists(Paths.get(DEFAULT_BOOTSTRAP_PATH))) {
+            // Check the default path
+            filePath = DEFAULT_BOOTSTRAP_PATH;
+        }
         if (filePath != null) {
             logger.log(XdsLogLevel.INFO, "Reading bootstrap file from {0}", filePath);
             jsonContent = reader.readFile(filePath);
@@ -111,7 +128,37 @@ public class Bootstrapper {
         return jsonContent;
     }
 
-    public class ServerInfo {
+    private BootstrapInfo buildBootstrapInfo(JsonNode rawBootstrap) {
+        checkArgument(!rawBootstrap.isEmpty(), "Bootstrap configuration cannot be empty");
+
+        // parse server info
+        JsonNode jsonServer = rawBootstrap.get("xds_servers").get(0);
+        ServerInfo serverInfo = new ServerInfo(jsonServer.get("server_uri").asText(), null, false);
+
+        // parse node info
+        JsonNode jsonNode = rawBootstrap.get("node");
+        JsonNode jsonMetadata = jsonNode.get("metadata");
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("CLUSTER_ID", jsonMetadata.get("CLUSTER_ID").asText());
+        metadata.put(
+                "ENVOY_PROMETHEUS_PORT",
+                jsonMetadata.get("ENVOY_PROMETHEUS_PORT").asText());
+        metadata.put("ENVOY_STATUS_PORT", jsonMetadata.get("ENVOY_STATUS_PORT").asText());
+        metadata.put("GENERATOR", jsonMetadata.get("GENERATOR").asText());
+        metadata.put("NAMESPACE", jsonMetadata.get("NAMESPACE").asText());
+
+        Node node = Node.newBuilder()
+                .setId(jsonNode.get("id").asText())
+                .setMetadata(metadata)
+                .build();
+
+        return BootstrapInfo.builder()
+                .servers(Collections.singletonList(serverInfo))
+                .node(node)
+                .build();
+    }
+
+    public static class ServerInfo {
         private final String target;
         private final Object implSpecificConfig;
         private final boolean ignoreResourceDeletion;
@@ -203,110 +250,6 @@ public class Bootstrapper {
         public String toString() {
             return "AuthorityInfo{" + "clientListenerResourceNameTemplate='" + clientListenerResourceNameTemplate + '\''
                     + ", xdsServers=" + xdsServers + '}';
-        }
-    }
-
-    public class BootstrapInfo {
-        private final ImmutableList<ServerInfo> servers;
-        private final Node node;
-
-        @Nullable
-        private final ImmutableMap<String, CertificateProviderInfo> certProviders;
-
-        @Nullable
-        private final String serverListenerResourceNameTemplate;
-
-        private final String clientDefaultListenerResourceNameTemplate;
-        private final ImmutableMap<String, AuthorityInfo> authorities;
-
-        private BootstrapInfo(Builder builder) {
-            this.servers = ImmutableList.copyOf(builder.servers);
-            this.node = builder.node;
-            this.certProviders = builder.certProviders == null ? null : ImmutableMap.copyOf(builder.certProviders);
-            this.serverListenerResourceNameTemplate = builder.serverListenerResourceNameTemplate;
-            this.clientDefaultListenerResourceNameTemplate = builder.clientDefaultListenerResourceNameTemplate;
-            this.authorities = ImmutableMap.copyOf(builder.authorities);
-        }
-
-        public ImmutableList<ServerInfo> getServers() {
-            return servers;
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
-        @Nullable
-        public ImmutableMap<String, CertificateProviderInfo> getCertProviders() {
-            return certProviders;
-        }
-
-        @Nullable
-        public String getServerListenerResourceNameTemplate() {
-            return serverListenerResourceNameTemplate;
-        }
-
-        public String getClientDefaultListenerResourceNameTemplate() {
-            return clientDefaultListenerResourceNameTemplate;
-        }
-
-        public ImmutableMap<String, AuthorityInfo> getAuthorities() {
-            return authorities;
-        }
-
-        public Builder builder() {
-            return new Builder().clientDefaultListenerResourceNameTemplate("%s").authorities(ImmutableMap.of());
-        }
-
-        public class Builder {
-            private List<ServerInfo> servers;
-            private Node node;
-            private Map<String, CertificateProviderInfo> certProviders;
-            private String serverListenerResourceNameTemplate;
-            private String clientDefaultListenerResourceNameTemplate;
-            private Map<String, AuthorityInfo> authorities;
-
-            public Builder servers(List<ServerInfo> servers) {
-                this.servers = servers;
-                return this;
-            }
-
-            public Builder node(Node node) {
-                this.node = node;
-                return this;
-            }
-
-            public Builder certProviders(@Nullable Map<String, CertificateProviderInfo> certProviders) {
-                this.certProviders = certProviders;
-                return this;
-            }
-
-            public Builder serverListenerResourceNameTemplate(@Nullable String serverListenerResourceNameTemplate) {
-                this.serverListenerResourceNameTemplate = serverListenerResourceNameTemplate;
-                return this;
-            }
-
-            public Builder clientDefaultListenerResourceNameTemplate(String clientDefaultListenerResourceNameTemplate) {
-                this.clientDefaultListenerResourceNameTemplate = clientDefaultListenerResourceNameTemplate;
-                return this;
-            }
-
-            public Builder authorities(Map<String, AuthorityInfo> authorities) {
-                this.authorities = authorities;
-                return this;
-            }
-
-            public BootstrapInfo build() {
-                return new BootstrapInfo(this);
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "BootstrapInfo{" + "servers=" + servers + ", node=" + node + ", certProviders=" + certProviders
-                    + ", serverListenerResourceNameTemplate='" + serverListenerResourceNameTemplate + '\''
-                    + ", clientDefaultListenerResourceNameTemplate='" + clientDefaultListenerResourceNameTemplate + '\''
-                    + ", authorities=" + authorities + '}';
         }
     }
 

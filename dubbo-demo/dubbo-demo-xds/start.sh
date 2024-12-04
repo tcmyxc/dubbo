@@ -1,6 +1,8 @@
 #!bash
 
-# docker run -d -p 5000:5000 --name local-registry registry:2  #Use this to enable docker local repository
+# create dubbo-demo namespace and set context
+kubectl create namespace dubbo-demo
+kubectl config set-context --current --namespace=dubbo-demo
 
 BASE_DIR=$(pwd)
 SKIP_PACKAGE=true

@@ -19,7 +19,7 @@ package org.apache.dubbo.xds;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
-import org.apache.dubbo.common.url.component.URLAddress;
+import org.apache.dubbo.xds.bootstrap.BootstrapInfo;
 import org.apache.dubbo.xds.bootstrap.Bootstrapper;
 import org.apache.dubbo.xds.security.api.CertPair;
 import org.apache.dubbo.xds.security.api.CertSource;
@@ -35,9 +35,6 @@ import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
-import io.grpc.netty.shaded.io.netty.channel.epoll.EpollDomainSocketChannel;
-import io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoopGroup;
-import io.grpc.netty.shaded.io.netty.channel.unix.DomainSocketAddress;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.stub.StreamObserver;
@@ -94,14 +91,13 @@ public class XdsChannel {
                             .build();
                 }
             } else {
-                Bootstrapper bootstrapper = new Bootstrapper();
-                Bootstrapper.BootstrapInfo bootstrapInfo = bootstrapper.bootstrap();
-                URLAddress address =
-                        URLAddress.parse(bootstrapInfo.getServers().get(0).getTarget(), null, false);
-                EpollEventLoopGroup elg = new EpollEventLoopGroup();
-                managedChannel = NettyChannelBuilder.forAddress(new DomainSocketAddress("/" + address.getPath()))
-                        .eventLoopGroup(elg)
-                        .channelType(EpollDomainSocketChannel.class)
+                BootstrapInfo bootstrapInfo = Bootstrapper.getInstance().bootstrap();
+                String server = bootstrapInfo.getServers().get(0).getTarget();
+                // URLAddress address = URLAddress.parse(bootstrapInfo.getServers().get(0).getTarget(), null, false);
+                // EpollEventLoopGroup elg = new EpollEventLoopGroup();
+                managedChannel = NettyChannelBuilder.forTarget(server)
+                        // .eventLoopGroup(elg)
+                        // .channelType(EpollDomainSocketChannel.class)
                         .usePlaintext()
                         .build();
             }

@@ -20,12 +20,10 @@ import org.apache.dubbo.common.lang.Nullable;
 import org.apache.dubbo.xds.resource.common.CidrRange;
 import org.apache.dubbo.xds.resource.common.ConfigOrError;
 import org.apache.dubbo.xds.resource.exception.ResourceInvalidException;
-import org.apache.dubbo.xds.resource.filter.ClientFilter;
 import org.apache.dubbo.xds.resource.filter.Filter;
 import org.apache.dubbo.xds.resource.filter.FilterConfig;
 import org.apache.dubbo.xds.resource.filter.FilterRegistry;
 import org.apache.dubbo.xds.resource.filter.NamedFilterConfig;
-import org.apache.dubbo.xds.resource.filter.ServerFilter;
 import org.apache.dubbo.xds.resource.filter.router.RouterFilter;
 import org.apache.dubbo.xds.resource.listener.FilterChain;
 import org.apache.dubbo.xds.resource.listener.FilterChainMatch;
@@ -555,14 +553,26 @@ public class XdsListenerResource extends XdsResourceType<LdsUpdate> {
             return StructOrError.fromError("HttpFilter [" + filterName + "] contains invalid proto: " + e);
         }
         Filter filter = filterRegistry.get(typeUrl);
-        if ((isForClient && !(filter instanceof ClientFilter)) || (!isForClient && !(filter instanceof ServerFilter))) {
-            if (isOptional) {
-                return null;
-            } else {
-                return StructOrError.fromError("HttpFilter [" + filterName + "](" + typeUrl
-                        + ") is required but unsupported for " + (isForClient ? "client" : "server"));
-            }
-        }
+        // if ((isForClient && !(filter instanceof ClientFilter)) || (!isForClient && !(filter instanceof
+        // ServerFilter))) {
+        //    if (isOptional) {
+        //        return null;
+        //    } else {
+        //        return StructOrError.fromError("HttpFilter [" + filterName + "](" + typeUrl
+        //                + ") is required but unsupported for " + (isForClient ? "client" : "server"));
+        //    }
+        // }
+
+        // if ((isForClient && !(filter instanceof Filter.ClientInterceptorBuilder))
+        //        || (!isForClient && !(filter instanceof Filter.ServerInterceptorBuilder))) {
+        //    if (isOptional) {
+        //        return null;
+        //    } else {
+        //        return StructOrError.fromError(
+        //                "HttpFilter [" + filterName + "](" + typeUrl + ") is required but unsupported for "
+        //                        + (isForClient ? "client" : "server"));
+        //    }
+        // }
         ConfigOrError<? extends FilterConfig> filterConfig = filter.parseFilterConfig(rawConfig);
         if (filterConfig.errorDetail != null) {
             return StructOrError.fromError(

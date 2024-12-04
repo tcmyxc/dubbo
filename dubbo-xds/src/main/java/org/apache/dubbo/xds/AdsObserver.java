@@ -21,6 +21,7 @@ import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.threadpool.manager.FrameworkExecutorRepository;
 import org.apache.dubbo.rpc.model.ApplicationModel;
+import org.apache.dubbo.xds.directory.XdsResourceListener;
 import org.apache.dubbo.xds.resource.XdsResourceType;
 import org.apache.dubbo.xds.resource.update.ResourceUpdate;
 import org.apache.dubbo.xds.resource.update.ValidatedResourceUpdate;
@@ -56,16 +57,15 @@ public class AdsObserver {
 
     private final Map<XdsResourceType<?>, ConcurrentMap<String, XdsRawResourceProtocol>> rawResourceListeners =
             new ConcurrentHashMap<>();
-
     protected StreamObserver<DiscoveryRequest> requestObserver;
 
     private final CompletableFuture<String> future = new CompletableFuture<>();
 
     private final Map<String, XdsResourceType<?>> subscribedResourceTypeUrls = new HashMap<>();
 
-    public AdsObserver(URL url, Node node) {
+    public AdsObserver(URL url) {
         this.url = url;
-        this.node = node;
+        this.node = NodeBuilder.build();
         this.xdsChannel = new XdsChannel(url);
         this.applicationModel = url.getOrDefaultApplicationModel();
     }
@@ -79,13 +79,15 @@ public class AdsObserver {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends ResourceUpdate> XdsRawResourceProtocol<T> addListener(
-            String resourceName, XdsResourceType<T> clusterResourceType) {
+    public <T extends ResourceUpdate> void addListener(
+            String resourceName, XdsResourceType<T> resourceType, XdsResourceListener<T> resourceListener) {
         ConcurrentMap<String, XdsRawResourceProtocol> resourceListeners =
-                rawResourceListeners.computeIfAbsent(clusterResourceType, k -> new ConcurrentHashMap<>());
-        return (XdsRawResourceProtocol<T>) resourceListeners.computeIfAbsent(
-                resourceName,
-                k -> new XdsRawResourceProtocol<>(this, NodeBuilder.build(), clusterResourceType, applicationModel));
+                rawResourceListeners.computeIfAbsent(resourceType, k -> new ConcurrentHashMap<>());
+
+        XdsRawResourceProtocol<T> xdsProtocol = (XdsRawResourceProtocol<T>) resourceListeners.computeIfAbsent(
+                resourceName, k -> new XdsRawResourceProtocol<>(this, node, resourceType, applicationModel));
+
+        xdsProtocol.subscribeResource(resourceName, resourceType, resourceListener);
     }
 
     public void adjustResourceSubscription(XdsResourceType<?> resourceType) {
@@ -144,7 +146,7 @@ public class AdsObserver {
             //  Maybe Using CountDownLatch would be better
             String name = Thread.currentThread().getName();
             if ("main".equals(name)) {
-                future.get(600, TimeUnit.SECONDS);
+                future.get(10000, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

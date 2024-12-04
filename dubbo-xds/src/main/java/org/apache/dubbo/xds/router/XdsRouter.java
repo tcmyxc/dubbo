@@ -22,14 +22,16 @@ import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.RpcException;
+import org.apache.dubbo.rpc.RpcInvocation;
 import org.apache.dubbo.rpc.cluster.router.RouterSnapshotNode;
 import org.apache.dubbo.rpc.cluster.router.state.AbstractStateRouter;
 import org.apache.dubbo.rpc.cluster.router.state.BitList;
 import org.apache.dubbo.rpc.support.RpcUtils;
-import org.apache.dubbo.xds.PilotExchanger;
 import org.apache.dubbo.xds.resource.route.ClusterWeight;
 import org.apache.dubbo.xds.resource.route.Route;
 import org.apache.dubbo.xds.resource.route.VirtualHost;
+import org.apache.dubbo.xds.resource.update.CdsUpdate;
+import org.apache.dubbo.xds.resource.update.CdsUpdate.ClusterType;
 import org.apache.dubbo.xds.resource.update.EdsUpdate;
 
 import java.util.List;
@@ -42,15 +44,13 @@ import static org.apache.dubbo.config.Constants.MESH_KEY;
 
 public class XdsRouter<T> extends AbstractStateRouter<T> {
 
-    private final PilotExchanger pilotExchanger;
-
     private Map<String, VirtualHost> xdsVirtualHostMap = new ConcurrentHashMap<>();
-
-    private Map<String, EdsUpdate> xdsClusterMap = new ConcurrentHashMap<>();
+    private Map<String, CdsUpdate> xdsClusterMap = new ConcurrentHashMap<>();
+    private Map<String, EdsUpdate> xdsEdsMap = new ConcurrentHashMap<>();
+    private final Map<String, BitList<Invoker<T>>> xdsClusterInvokersMap = new ConcurrentHashMap<>();
 
     public XdsRouter(URL url) {
         super(url);
-        pilotExchanger = url.getOrDefaultApplicationModel().getBeanFactory().getBean(PilotExchanger.class);
     }
 
     @Override
@@ -69,6 +69,9 @@ public class XdsRouter<T> extends AbstractStateRouter<T> {
             return invokers;
         }
 
+        // load xds data
+        processXdsData((RpcInvocation) invocation);
+
         // 1. match cluster
         String matchedCluster = matchCluster(invocation);
 
@@ -78,11 +81,15 @@ public class XdsRouter<T> extends AbstractStateRouter<T> {
         return matchedInvokers;
     }
 
+    private void processXdsData(RpcInvocation invocation) {
+        this.xdsVirtualHostMap = (Map<String, VirtualHost>) invocation.getAttachmentObject("xdsVirtualHostMap");
+        this.xdsClusterMap = (Map<String, CdsUpdate>) invocation.getAttachmentObject("xdsClusterMap");
+        this.xdsEdsMap = (Map<String, EdsUpdate>) invocation.getAttachmentObject("xdsEdsMap");
+    }
+
     private String matchCluster(Invocation invocation) {
         String cluster = null;
         String serviceName = invocation.getInvoker().getUrl().getParameter("provided-by");
-        //        VirtualHost xdsVirtualHost = pilotExchanger.getXdsVirtualHostMap().get(serviceName);
-        // FIXME
         VirtualHost xdsVirtualHost = xdsVirtualHostMap.get(serviceName);
 
         // match route
@@ -95,11 +102,25 @@ public class XdsRouter<T> extends AbstractStateRouter<T> {
                 if (cluster == null) {
                     cluster = computeWeightCluster(xdsRoute.getRouteAction().getWeightedClusters());
                 }
+                CdsUpdate xdsCluster = xdsClusterMap.get(cluster);
+                cluster = findCluster(xdsCluster);
             }
             if (cluster != null) break;
         }
 
         return cluster;
+    }
+
+    private String findCluster(CdsUpdate xdsCluster) {
+        if (ClusterType.EDS.equals(xdsCluster.getClusterType())) {
+            return xdsCluster.getEdsServiceName();
+        } else if (ClusterType.AGGREGATE.equals(xdsCluster.getClusterType())) {
+            String cluster = xdsCluster.getPrioritizedClusterNames().get(0);
+            CdsUpdate cdsUpdate = xdsClusterMap.get(cluster);
+            return findCluster(cdsUpdate);
+        } else {
+            return null;
+        }
     }
 
     private String computeWeightCluster(List<ClusterWeight> weightedClusters) {

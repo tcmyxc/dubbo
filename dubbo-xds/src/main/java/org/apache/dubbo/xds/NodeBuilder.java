@@ -16,7 +16,8 @@
  */
 package org.apache.dubbo.xds;
 
-import org.apache.dubbo.common.utils.NetUtils;
+import org.apache.dubbo.xds.bootstrap.BootstrapInfo;
+import org.apache.dubbo.xds.bootstrap.Bootstrapper;
 import org.apache.dubbo.xds.istio.IstioEnv;
 
 import java.util.HashMap;
@@ -28,18 +29,17 @@ import io.envoyproxy.envoy.config.core.v3.Node;
 
 public class NodeBuilder {
 
-    private static final String SVC_CLUSTER_LOCAL = ".svc.cluster.local";
-
     public static Node build() {
-        //        String podName = System.getenv("metadata.name");
-        //        String podNamespace = System.getenv("metadata.namespace");
-
-        String podName = IstioEnv.getInstance().getPodName();
-        String podNamespace = IstioEnv.getInstance().getWorkloadNameSpace();
-        String svcName = IstioEnv.getInstance().getIstioMetaClusterId();
+        BootstrapInfo bootstrapInfo = Bootstrapper.getInstance().bootstrap();
+        assert bootstrapInfo.getNode().getMetadata() != null;
+        String podId = bootstrapInfo.getNode().getId();
+        String podNamespace =
+                (String) bootstrapInfo.getNode().getMetadata().getOrDefault("NAMESPACE", "EMPTY_NAME_SPACE");
+        String clusterName = (String) bootstrapInfo.getNode().getMetadata().getOrDefault("CLUSTER_ID", "Kubernetes");
+        String generatorName = (String) bootstrapInfo.getNode().getMetadata().getOrDefault("GENERATOR", "grpc");
         String saName = IstioEnv.getInstance().getServiceAccountName();
 
-        Map<String, Value> metadataMap = new HashMap<>(2);
+        Map<String, Value> metadataMap = new HashMap<>();
 
         metadataMap.put(
                 "ISTIO_META_NAMESPACE",
@@ -47,14 +47,19 @@ public class NodeBuilder {
         metadataMap.put(
                 "SERVICE_ACCOUNT", Value.newBuilder().setStringValue(saName).build());
 
+        metadataMap.put(
+                "GENERATOR", Value.newBuilder().setStringValue(generatorName).build());
+        metadataMap.put(
+                "NAMESPACE", Value.newBuilder().setStringValue(podNamespace).build());
+
         Struct metadata = Struct.newBuilder().putAllFields(metadataMap).build();
 
         // id -> sidecar~ip~{POD_NAME}~{NAMESPACE_NAME}.svc.cluster.local
         // cluster -> {SVC_NAME}
         return Node.newBuilder()
                 .setMetadata(metadata)
-                .setId("sidecar~" + NetUtils.getLocalHost() + "~" + podName + "~" + podNamespace + SVC_CLUSTER_LOCAL)
-                .setCluster(svcName)
+                .setId(podId)
+                .setCluster(clusterName)
                 .build();
     }
 }

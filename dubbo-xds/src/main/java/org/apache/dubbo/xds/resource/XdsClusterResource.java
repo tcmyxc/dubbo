@@ -121,6 +121,10 @@ public class XdsClusterResource extends XdsResourceType<CdsUpdate> {
 
         updateBuilder.lbPolicyConfig(lbPolicyConfig);
 
+        // updateBuilder.clusterType(cluster.getClusterType().);
+        //
+        // updateBuilder.clusterName(cluster.getName());
+
         CdsUpdate cdsUpdate = updateBuilder.build();
         cdsUpdate.setRawCluster(cluster); // TODO temp solution for compatibility
 

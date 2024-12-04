@@ -17,8 +17,8 @@
 package org.apache.dubbo.xds.test;
 
 import org.apache.dubbo.xds.XdsInitializationException;
+import org.apache.dubbo.xds.bootstrap.BootstrapInfo;
 import org.apache.dubbo.xds.bootstrap.Bootstrapper;
-import org.apache.dubbo.xds.bootstrap.Bootstrapper.BootstrapInfo;
 
 import org.junit.After;
 import org.junit.Before;

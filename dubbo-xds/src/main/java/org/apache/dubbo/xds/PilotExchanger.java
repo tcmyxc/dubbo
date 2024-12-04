@@ -38,7 +38,7 @@ public class PilotExchanger {
 
     protected PilotExchanger(URL url) {
         this.pollingTimeout = url.getParameter("pollingTimeout", 10);
-        adsObserver = new AdsObserver(url, NodeBuilder.build());
+        adsObserver = new AdsObserver(url);
         this.applicationModel = url.getOrDefaultApplicationModel();
     }
 
@@ -48,10 +48,7 @@ public class PilotExchanger {
             adsObserver.saveSubscribedType(resourceType);
         }
 
-        XdsRawResourceProtocol<T> xdsProtocol = adsObserver.addListener(resourceName, resourceType);
-        if (xdsProtocol != null) {
-            xdsProtocol.subscribeResource(resourceName, resourceType, resourceListener);
-        }
+        adsObserver.addListener(resourceName, resourceType, resourceListener);
     }
 
     public void unSubscribeXdsResource(String clusterName, XdsDirectory listener) {}

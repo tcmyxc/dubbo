@@ -31,16 +31,15 @@ import org.apache.dubbo.rpc.cluster.router.state.BitList;
 import org.apache.dubbo.xds.PilotExchanger;
 import org.apache.dubbo.xds.directory.XdsDirectory.LdsUpdateWatcher.RdsUpdateWatcher;
 import org.apache.dubbo.xds.resource.XdsClusterResource;
+import org.apache.dubbo.xds.resource.XdsEndpointResource;
 import org.apache.dubbo.xds.resource.XdsListenerResource;
 import org.apache.dubbo.xds.resource.XdsRouteConfigureResource;
-import org.apache.dubbo.xds.resource.cluster.OutlierDetection;
 import org.apache.dubbo.xds.resource.common.Locality;
 import org.apache.dubbo.xds.resource.endpoint.DropOverload;
 import org.apache.dubbo.xds.resource.endpoint.LbEndpoint;
 import org.apache.dubbo.xds.resource.endpoint.LocalityLbEndpoints;
 import org.apache.dubbo.xds.resource.filter.NamedFilterConfig;
 import org.apache.dubbo.xds.resource.listener.HttpConnectionManager;
-import org.apache.dubbo.xds.resource.listener.security.UpstreamTlsContext;
 import org.apache.dubbo.xds.resource.route.ClusterWeight;
 import org.apache.dubbo.xds.resource.route.Route;
 import org.apache.dubbo.xds.resource.route.RouteAction;
@@ -68,7 +67,7 @@ import com.google.common.collect.Sets;
 
 public class XdsDirectory<T> extends AbstractDirectory<T> {
 
-    private final URL url;
+    private final URL oriUrl;
 
     private final Class<T> serviceType;
 
@@ -80,13 +79,19 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
 
     private Protocol protocol;
 
+    // 资源存储
     private final Map<String, VirtualHost> xdsVirtualHostMap = new ConcurrentHashMap<>();
-
-    private final Map<String, EdsUpdate> xdsEndpointMap = new ConcurrentHashMap<>();
+    private final Map<String, CdsUpdate> xdsClusterMap = new ConcurrentHashMap<>();
+    private final Map<String, EdsUpdate> xdsEdsMap = new ConcurrentHashMap<>();
+    private final Map<String, BitList<Invoker<T>>> xdsClusterInvokersMap = new ConcurrentHashMap<>();
 
     private static ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(XdsDirectory.class);
 
+    /**
+     * 监听器
+     */
     private Map<String, LdsUpdateWatcher> ldsWatchers = new HashMap<>();
+
     private Map<String, RdsUpdateWatcher> rdsWatchers = new HashMap<>();
     private Map<String, CdsUpdateNodeDirectory> cdsWatchers = new HashMap<>();
     private Map<String, EdsUpdateLeafDirectory> edsWatchers = new HashMap<>();
@@ -94,13 +99,13 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
     public XdsDirectory(Directory<T> directory) {
         super(directory.getUrl(), null, true, directory.getConsumerUrl());
         this.serviceType = directory.getInterface();
-        this.url = directory.getConsumerUrl();
-        this.applicationNames = url.getParameter("provided-by").split(",");
-        this.protocolName = url.getParameter("protocol", "tri");
+        this.oriUrl = directory.getConsumerUrl();
+        this.applicationNames = oriUrl.getParameter("provided-by").split(",");
+        this.protocolName = oriUrl.getParameter("protocol", "tri");
         this.protocol = directory.getProtocol();
         super.routerChain = directory.getRouterChain();
         this.pilotExchanger =
-                url.getOrDefaultApplicationModel().getBeanFactory().getBean(PilotExchanger.class);
+                oriUrl.getOrDefaultApplicationModel().getBeanFactory().getBean(PilotExchanger.class);
 
         // subscribe resource
         for (String applicationName : applicationNames) {
@@ -115,7 +120,15 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
     }
 
     public Map<String, EdsUpdate> getXdsEndpointMap() {
-        return xdsEndpointMap;
+        return xdsEdsMap;
+    }
+
+    public Map<String, CdsUpdate> getXdsClusterMap() {
+        return xdsClusterMap;
+    }
+
+    public Map<String, BitList<Invoker<T>>> getXdsClusterInvokersMap() {
+        return xdsClusterInvokersMap;
     }
 
     public Protocol getProtocol() {
@@ -133,6 +146,11 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
 
     public List<Invoker<T>> doList(
             SingleRouterChain<T> singleRouterChain, BitList<Invoker<T>> invokers, Invocation invocation) {
+        // xds资源放在invocation带入router中
+        invocation.setAttachment("xdsVirtualHostMap", getXdsVirtualHostMap());
+        invocation.setAttachment("xdsClusterMap", getXdsClusterMap());
+        invocation.setAttachment("xdsEdsMap", getXdsEndpointMap());
+
         List<Invoker<T>> result = singleRouterChain.route(this.getConsumerUrl(), invokers, invocation);
         return (List) (result == null ? BitList.emptyList() : result);
     }
@@ -189,6 +207,9 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
 
         @Override
         public void onResourceUpdate(LdsUpdate update) {
+            if (update == null) {
+                return;
+            }
             HttpConnectionManager httpConnectionManager = update.getHttpConnectionManager();
             List<VirtualHost> virtualHosts = httpConnectionManager.getVirtualHosts();
             String rdsName = httpConnectionManager.getRdsName();
@@ -218,7 +239,7 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
             if (virtualHost == null) {
                 return;
             }
-
+            xdsVirtualHostMap.put(applicationNames[0], virtualHost);
             List<Route> routes = virtualHost.getRoutes();
 
             // Populate all clusters to which requests can be routed to through the virtual host.
@@ -289,15 +310,27 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
     public class CdsUpdateNodeDirectory implements XdsResourceListener<CdsUpdate> {
         @Override
         public void onResourceUpdate(CdsUpdate update) {
-            // 啥都不干，就是把 aggregate logicalDns eds 三种做个分类处理，其中eds的不用做什么事情
-            if (update.getClusterType() == ClusterType.AGGREGATE) {
-                String clusterName = update.getClusterName();
+            if (update == null) {
+                return;
+            }
+            // 根据 cluster 的类型进行相应的处理
+            if (update.getClusterType() == ClusterType.EDS) {
+                // 保存Cluster信息到map中，在route时使用
+                xdsClusterMap.put(update.getClusterName(), update);
+                String edsResourceName =
+                        update.getEdsServiceName() != null ? update.getEdsServiceName() : update.getClusterName();
+                EdsUpdateLeafDirectory edsUpdateWatcher = new EdsUpdateLeafDirectory(update.getClusterName());
+                edsWatchers.putIfAbsent(edsResourceName, edsUpdateWatcher);
+                pilotExchanger.subscribeXdsResource(
+                        edsResourceName, XdsEndpointResource.getInstance(), edsUpdateWatcher);
+            } else if (update.getClusterType() == ClusterType.AGGREGATE) {
+                // 非叶子节点，继续请求其他cluster信息
                 for (String cluster : update.getPrioritizedClusterNames()) {
-                    // create internal node directory.
+                    CdsUpdateNodeDirectory cdsUpdateWatcher = new CdsUpdateNodeDirectory();
+                    cdsWatchers.putIfAbsent(cluster, cdsUpdateWatcher);
+                    pilotExchanger.subscribeXdsResource(cluster, XdsClusterResource.getInstance(), cdsUpdateWatcher);
                 }
-            } else if (update.getClusterType() == ClusterType.EDS) {
-                // create leaf directory.
-            } else {
+            } else if (update.getClusterType() == ClusterType.LOGICAL_DNS) {
 
             }
         }
@@ -310,36 +343,32 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
      */
     public class EdsUpdateLeafDirectory implements XdsResourceListener<EdsUpdate> {
         private final String clusterName;
-        private final String edsResourceName;
-
-        @Nullable
-        protected final Long maxConcurrentRequests;
-
-        @Nullable
-        protected final UpstreamTlsContext tlsContext;
-
-        @Nullable
-        protected final OutlierDetection outlierDetection;
+        // private final String edsResourceName;
+        //
+        // @Nullable
+        // protected final Long maxConcurrentRequests;
+        //
+        // @Nullable
+        // protected final UpstreamTlsContext tlsContext;
+        //
+        // @Nullable
+        // protected final OutlierDetection outlierDetection;
 
         private Map<Locality, String> localityPriorityNames = Collections.emptyMap();
 
         int priorityNameGenId = 1;
 
-        public EdsUpdateLeafDirectory(
-                String clusterName,
-                String edsResourceName,
-                @Nullable Long maxConcurrentRequests,
-                @Nullable UpstreamTlsContext tlsContext,
-                @Nullable OutlierDetection outlierDetection) {
+        public EdsUpdateLeafDirectory(String clusterName) {
             this.clusterName = clusterName;
-            this.edsResourceName = edsResourceName;
-            this.maxConcurrentRequests = maxConcurrentRequests;
-            this.tlsContext = tlsContext;
-            this.outlierDetection = outlierDetection;
+            ;
         }
 
         @Override
         public void onResourceUpdate(EdsUpdate update) {
+            if (update == null) {
+                return;
+            }
+            xdsEdsMap.put(update.getClusterName(), update);
             Map<Locality, LocalityLbEndpoints> localityLbEndpoints = update.getLocalityLbEndpointsMap();
             List<DropOverload> dropOverloads = update.getDropPolicies();
             List<URLAddress> addresses = new ArrayList<>();
@@ -368,6 +397,8 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
                 }
                 prioritizedLocalityWeights.get(priorityName).put(locality, localityLbInfo.getLocalityWeight());
             }
+
+            generateInvokersFromEndpoints(addresses);
 
             sortedPriorityNames.retainAll(prioritizedLocalityWeights.keySet());
         }
@@ -404,6 +435,38 @@ public class XdsDirectory<T> extends AbstractDirectory<T> {
             }
             localityPriorityNames = newNames;
             return ret;
+        }
+
+        /**
+         * 根据endpoints生成invoker
+         * @param addresses
+         */
+        private void generateInvokersFromEndpoints(List<URLAddress> addresses) {
+            BitList<Invoker<T>> invokers = new BitList<>(Collections.emptyList());
+            addresses.forEach(address -> {
+                URL url = new URL(
+                        protocolName,
+                        address.getIp(),
+                        address.getPort(),
+                        serviceType.getName(),
+                        oriUrl.getParameters());
+                // set cluster name
+                url = url.addParameter("clusterID", clusterName);
+                // set load balance policy
+                //            url = url.addParameter("loadbalance", lbPolicy);
+                //  cluster to invoker
+                Invoker<T> invoker = protocol.refer(serviceType, url);
+
+                invokers.add(invoker);
+            });
+            // TODO: Consider cases where some clients are not available
+            // TODO: Need add new api which can add invokers, because a XdsDirectory need monitor multi clusters.
+
+            BitList<Invoker<T>> oriInvokers = getInvokers();
+            oriInvokers.addAll(invokers);
+            // 设置新的invokers到xdsCluster中
+            setInvokers(invokers);
+            refreshRouter(invokers.clone(), () -> setInvokers(invokers));
         }
     }
 

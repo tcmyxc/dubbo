@@ -10,7 +10,7 @@ spec:
   ports:
     - port: 50050
       targetPort: 50050
-      name: tcp
+      name: http
     - port: 31000
       targetPort: 31000
       name: debug
@@ -29,7 +29,7 @@ spec:
   ports:
     - port: 50051
       targetPort: 50051
-      name: tcp
+      name: http
     - port: 31001
       targetPort: 31001
       name: debug
@@ -99,7 +99,7 @@ spec:
             - containerPort: 31001
           env:
             - name: JAVA_TOOL_OPTIONS
-              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=31001"
+              value: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=31001"
 
   replicas: 1
 

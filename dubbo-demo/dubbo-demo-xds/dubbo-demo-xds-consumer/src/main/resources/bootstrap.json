@@ -1,7 +1,7 @@
 {
   "xds_servers": [
     {
-      "server_uri": "47.251.12.148:15010",
+      "server_uri": "istiod.istio-system.svc:15010",
       "channel_creds": [
         {
           "type": "insecure"
@@ -13,7 +13,7 @@
     }
   ],
   "node": {
-    "id": "sidecar~192.168.19.141~echo-v1-5764868574-whqs9.echo-grpc~echo-grpc.svc.cluster.local",
+    "id": "sidecar~192.168.19.141~dubbo-v4-5764868574-whqs9.dubbo-demo~dubbo-demo.svc.cluster.local",
     "metadata": {
       "ANNOTATIONS": {
         "inject.istio.io/templates": "grpc-agent",
@@ -45,8 +45,8 @@
         "version": "v1"
       },
       "MESH_ID": "cluster.local",
-      "NAME": "echo-v1-5859d7bc7d-wlb2d",
-      "NAMESPACE": "echo-grpc",
+      "NAME": "dubbo-v4-5764868574-whqs9",
+      "NAMESPACE": "dubbo-demo",
       "NODE_NAME": "us-west-1.192.168.19.107",
       "OWNER": "kubernetes://apis/apps/v1/namespaces/echo-grpc/deployments/echo-v1",
       "PILOT_SAN": [

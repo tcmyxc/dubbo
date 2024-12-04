@@ -661,6 +661,18 @@ public class RpcInvocation implements Invocation, Serializable {
         }
     }
 
+    public Object getAttachmentObject(String key) {
+        try {
+            attachmentLock.lock();
+            if (attachments == null) {
+                attachments = new HashMap<>();
+            }
+            return attachments.get(key);
+        } finally {
+            attachmentLock.unlock();
+        }
+    }
+
     @Deprecated
     public void setAttachments(Map<String, String> attachments) {
         try {

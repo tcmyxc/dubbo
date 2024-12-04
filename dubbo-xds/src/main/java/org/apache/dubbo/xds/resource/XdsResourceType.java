@@ -19,7 +19,7 @@ package org.apache.dubbo.xds.resource;
 import org.apache.dubbo.common.lang.Nullable;
 import org.apache.dubbo.common.utils.Assert;
 import org.apache.dubbo.common.utils.StringUtils;
-import org.apache.dubbo.xds.bootstrap.Bootstrapper;
+import org.apache.dubbo.xds.bootstrap.BootstrapInfo;
 import org.apache.dubbo.xds.bootstrap.Bootstrapper.ServerInfo;
 import org.apache.dubbo.xds.resource.exception.ResourceInvalidException;
 import org.apache.dubbo.xds.resource.filter.FilterRegistry;
@@ -88,7 +88,7 @@ public abstract class XdsResourceType<T extends ResourceUpdate> {
         final ServerInfo serverInfo;
         final String versionInfo;
         final String nonce;
-        final Bootstrapper.BootstrapInfo bootstrapInfo;
+        final BootstrapInfo bootstrapInfo;
         final FilterRegistry filterRegistry;
         final LoadBalancerRegistry loadBalancerRegistry;
         final TlsContextManager tlsContextManager;
@@ -102,7 +102,7 @@ public abstract class XdsResourceType<T extends ResourceUpdate> {
                 ServerInfo serverInfo,
                 String versionInfo,
                 String nonce,
-                Bootstrapper.BootstrapInfo bootstrapInfo,
+                BootstrapInfo bootstrapInfo,
                 FilterRegistry filterRegistry,
                 LoadBalancerRegistry loadBalancerRegistry,
                 TlsContextManager tlsContextManager,

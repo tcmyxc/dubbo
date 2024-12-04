@@ -44,4 +44,61 @@ public interface Filter {
      * {@link com.google.protobuf.Any} or a {@link com.google.protobuf.Struct}.
      */
     ConfigOrError<? extends FilterConfig> parseFilterConfigOverride(Message rawProtoMessage);
+
+    // interface FilterConfig {
+    //    String typeUrl();
+    // }
+
+    /// ** Uses the FilterConfigs produced above to produce an HTTP filter interceptor for clients. */
+    // interface ClientInterceptorBuilder {
+    //    @Nullable
+    //    ClientInterceptor buildClientInterceptor(
+    //            FilterConfig config, @Nullable FilterConfig overrideConfig, PickSubchannelArgs args,
+    //            ScheduledExecutorService scheduler);
+    // }
+
+    /// ** Uses the FilterConfigs produced above to produce an HTTP filter interceptor for the server. */
+    // interface ServerInterceptorBuilder {
+    //    @Nullable
+    //    ServerInterceptor buildServerInterceptor(
+    //            FilterConfig config, @Nullable FilterConfig overrideConfig);
+    // }
+    //
+    /// ** Filter config with instance name. */
+    // final class NamedFilterConfig {
+    //    // filter instance name
+    //    final String name;
+    //    final FilterConfig filterConfig;
+    //
+    //    NamedFilterConfig(String name, FilterConfig filterConfig) {
+    //        this.name = name;
+    //        this.filterConfig = filterConfig;
+    //    }
+    //
+    //    @Override
+    //    public boolean equals(Object o) {
+    //        if (this == o) {
+    //            return true;
+    //        }
+    //        if (o == null || getClass() != o.getClass()) {
+    //            return false;
+    //        }
+    //        NamedFilterConfig that = (NamedFilterConfig) o;
+    //        return Objects.equals(name, that.name)
+    //                && Objects.equals(filterConfig, that.filterConfig);
+    //    }
+    //
+    //    @Override
+    //    public int hashCode() {
+    //        return Objects.hash(name, filterConfig);
+    //    }
+    //
+    //    @Override
+    //    public String toString() {
+    //        return MoreObjects.toStringHelper(this)
+    //                .add("name", name)
+    //                .add("filterConfig", filterConfig)
+    //                .toString();
+    //    }
+    // }
 }
