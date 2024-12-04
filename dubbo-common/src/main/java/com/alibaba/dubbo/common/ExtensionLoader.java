@@ -82,7 +82,7 @@ public class ExtensionLoader<T> {
         if (type == null)
             throw new IllegalArgumentException("Extension type == null");
         
-        ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
+        ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);// 先从map里面查是否已存在
         if (loader == null) {
             EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));
             loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
@@ -98,17 +98,17 @@ public class ExtensionLoader<T> {
 	public T getExtension(String name) {
 		if (name == null || name.length() == 0)
 		    throw new IllegalArgumentException("Extension name == null");
-		Reference<Object> reference = cachedInstances.get(name);
-		if (reference == null) {
+		Reference<Object> reference = cachedInstances.get(name);// 先从缓存里面查找
+		if (reference == null) {// 没有则放进缓存
 		    cachedInstances.putIfAbsent(name, new Reference<Object>());
 		    reference = cachedInstances.get(name);
 		}
-		Object instance = reference.get();
+		Object instance = reference.get();// 获取引用所指的对象
 		if (instance == null) {
-		    synchronized (reference) {
+		    synchronized (reference) {// 加锁后再次尝试获取
 	            instance = reference.get();
 	            if (instance == null) {
-	                instance = createExtension(name);
+	                instance = createExtension(name);// 确实没有则根据name创建
 	                reference.set(instance);
 	            }
 	        }
