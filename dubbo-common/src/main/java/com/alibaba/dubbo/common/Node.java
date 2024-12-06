@@ -25,7 +25,7 @@ import com.alibaba.dubbo.common.URL;
 public interface Node {
 
     /**
-     * get url.
+     * 获取 url
      * 
      * @return url.
      */

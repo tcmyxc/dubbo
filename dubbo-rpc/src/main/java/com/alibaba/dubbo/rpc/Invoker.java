@@ -49,7 +49,7 @@ public interface Invoker<T> {
     boolean isAvailable();
 
     /**
-     * invoke.
+     * 执行调用
      * 
      * @param invocation
      * @return result

@@ -54,10 +54,16 @@ public class DubboMonitor implements Monitor {
 
     private final MonitorService monitorService;
 
+    /**
+     * 监控时间间隔
+     */
     private final long monitorInterval;
     
     private final ConcurrentMap<Statistics, AtomicReference<long[]>> statisticsMap = new ConcurrentHashMap<Statistics, AtomicReference<long[]>>();
 
+    /**
+     * 做一些必要的初始化，同时开启一个后台线程定期发送统计信息
+     */
     public DubboMonitor(Invoker<MonitorService> monitorInvoker, MonitorService monitorService) {
         this.monitorInvoker = monitorInvoker;
         this.monitorService = monitorService;

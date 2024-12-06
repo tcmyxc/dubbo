@@ -33,7 +33,7 @@ public interface MonitorFactory {
      * @param url
      * @return
      */
-    @Adaptive("protocol")
+    @Adaptive("protocol")// 运行时，根据 URL 里面的实际参数 "protocol" 决定实现，如果没有，则使用默认的 dubbo
     Monitor getMonitor(URL url);
 
 }

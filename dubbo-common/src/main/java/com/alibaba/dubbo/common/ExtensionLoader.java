@@ -84,7 +84,7 @@ public class ExtensionLoader<T> {
         
         ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);// 先从map里面查是否已存在
         if (loader == null) {
-            EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));
+            EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type));// 没有则创建并放到map
             loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         }
         return loader;
@@ -202,8 +202,8 @@ public class ExtensionLoader<T> {
 	        throw new IllegalStateException("No such extension \"" + name + "\" for " + type.getName() + "!");
 	    return clazz;
 	}
-	
-	private Map<String, Class<?>> getExtensionClasses() {
+
+	private Map<String, Class<?>> getExtensionClasses() {// 获取拓展对应的Class对象
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
             synchronized (cachedClasses) {
@@ -228,7 +228,7 @@ public class ExtensionLoader<T> {
             if(names.length == 1) cachedDefaultName = names[0];
         }
         
-        ClassLoader classLoader = findClassLoader();
+        ClassLoader classLoader = findClassLoader();// 获取类加载器
         Map<String, Class<?>> extensionClasses = new HashMap<String, Class<?>>();
         String fileName = null;
         try {
@@ -251,7 +251,7 @@ public class ExtensionLoader<T> {
                                 if (line.length() > 0) {
                                     try {
                                         Class<?> clazz = Class.forName(line, true, classLoader);
-                                        if (! type.isAssignableFrom(clazz)) {
+                                        if (! type.isAssignableFrom(clazz)) {// 判断clazz是否是type类型的
                                             throw new IllegalStateException("Error when load extension class(interface: " +
                                                     type + ", class line: " + clazz.getName() + "), class " 
                                                     + clazz.getName() + "is not subtype of interface.");
@@ -266,7 +266,7 @@ public class ExtensionLoader<T> {
                                             }
                                         } else {
                                             try {
-                                                clazz.getConstructor(type);
+                                                clazz.getConstructor(type);// 返回与指定参数类型匹配的构造器
                                                 Set<Class<?>> autoproxies = cachedWrapperClasses;
                                                 if (autoproxies == null) {
                                                     cachedWrapperClasses = new ConcurrentHashSet<Class<?>>();
@@ -274,8 +274,8 @@ public class ExtensionLoader<T> {
                                                 }
                                                 autoproxies.add(clazz);
                                             } catch (NoSuchMethodException e) {
-                                                clazz.getConstructor();
-                                                Extension extension = clazz.getAnnotation(Extension.class);
+                                                clazz.getConstructor();// 获取无参构造
+                                                Extension extension = clazz.getAnnotation(Extension.class);// 获取Extension注解的信息
                                                 if (extension == null) {
                                                     throw new IllegalStateException("No such @Extension annotation in class " + type.getName());
                                                 }
@@ -495,7 +495,7 @@ public class ExtensionLoader<T> {
     }
 
     private static ClassLoader findClassLoader() {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();// 获取当前线程上下文的类加载器
         if (classLoader != null) {
             return classLoader;
         }
