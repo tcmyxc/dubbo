@@ -18,7 +18,7 @@ package com.alibaba.dubbo.rpc;
 import com.alibaba.dubbo.common.Extension;
 
 /**
- * Filter. (SPI, Singleton, ThreadSafe)
+ * 过滤器 (Filter). (SPI, Singleton, ThreadSafe)
  * 
  * @author william.liangf
  */
