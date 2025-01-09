@@ -15,6 +15,14 @@
  */
 package com.alibaba.dubbo.config;
 
+import com.alibaba.dubbo.common.Constants;
+import com.alibaba.dubbo.common.ExtensionLoader;
+import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.common.logger.Logger;
+import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.monitor.MonitorService;
+import com.alibaba.dubbo.rpc.RpcConstants;
+
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -25,14 +33,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.alibaba.dubbo.common.Constants;
-import com.alibaba.dubbo.common.ExtensionLoader;
-import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.common.logger.Logger;
-import com.alibaba.dubbo.common.logger.LoggerFactory;
-import com.alibaba.dubbo.monitor.MonitorService;
-import com.alibaba.dubbo.rpc.RpcConstants;
 
 /**
  * AbstractConfig
@@ -74,7 +74,10 @@ public abstract class AbstractConfig implements Serializable {
             PROPERTIES.putAll(properties);
         }
     }
-    
+
+    /**
+     * 从配置文件加载配置
+     */
     private static Properties loadProperties() {
         Properties properties = new Properties();
         try {

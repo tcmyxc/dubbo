@@ -15,11 +15,6 @@
  */
 package com.alibaba.dubbo.registry.support.dubbo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.Extension;
 import com.alibaba.dubbo.common.URL;
@@ -34,6 +29,11 @@ import com.alibaba.dubbo.rpc.Protocol;
 import com.alibaba.dubbo.rpc.RpcConstants;
 import com.alibaba.dubbo.rpc.cluster.Cluster;
 import com.alibaba.dubbo.rpc.proxy.ProxyFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * DubboRegistryFactory
@@ -62,7 +62,7 @@ public class DubboRegistryFactory extends AbstractRegistryFactory {
     }
     
     public Registry createRegistry(URL url) {
-        url = getRegistryURL(url);
+        url = getRegistryURL(url);// 对url做一些必要处理
         List<URL> urls = new ArrayList<URL>();
         urls.add(url.removeParameter(Constants.BACKUP_KEY));
         String backup = url.getParameter(Constants.BACKUP_KEY);

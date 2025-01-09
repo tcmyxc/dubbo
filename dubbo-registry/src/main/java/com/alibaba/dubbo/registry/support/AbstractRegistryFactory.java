@@ -15,17 +15,17 @@
  */
 package com.alibaba.dubbo.registry.support;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
-
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.registry.Registry;
 import com.alibaba.dubbo.registry.RegistryFactory;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * RegistryLocators. (API, Static, ThreadSafe)
@@ -48,14 +48,18 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         // 锁定注册中心获取过程，保证注册中心单一实例
         LOCK.lock();
         try {
+            // 1、先从缓存中查找
             Registry registry = REGISTRIES.get(getCacheKey(url));
+            // 2、如果缓存中有，直接返回即可
             if (registry != null) {
                 return registry;
             }
+            // 3、如果缓存中没有，则创建一个注册中心
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);
             }
+            // 4、新建注册中心之后，放进缓存
             REGISTRIES.put(getCacheKey(url), registry);
             return registry;
         } finally {
@@ -98,7 +102,10 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
             LOCK.unlock();
         }
     }
-    
+
+    /**
+     * 获取缓存key
+     */
     protected static String getCacheKey(URL url){
         return url.getProtocol() + "://" + url.getUsername() + ":" + url.getPassword() + "@" + url.getAddress();
     }

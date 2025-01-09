@@ -15,6 +15,12 @@
  */
 package com.alibaba.dubbo.registry.support;
 
+import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.common.logger.Logger;
+import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.registry.NotifyListener;
+import com.alibaba.dubbo.registry.RegistryService;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,12 +28,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.common.logger.Logger;
-import com.alibaba.dubbo.common.logger.LoggerFactory;
-import com.alibaba.dubbo.registry.NotifyListener;
-import com.alibaba.dubbo.registry.RegistryService;
 
 /**
  * AbstractRegistryService
@@ -39,27 +39,35 @@ public abstract class AbstractRegistryService implements RegistryService {
     // 日志输出
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    // 已注册的服务
     // Map<serviceName, Map<url, queryString>>
+    /**
+     * 已注册的服务
+     */
     private final ConcurrentMap<String, List<URL>> registered = new ConcurrentHashMap<String, List<URL>>();
 
-    // 已订阅的服务
     // Map<serviceName, queryString>
+    /**
+     * 已订阅的服务
+     */
     private final ConcurrentMap<String, Map<String, String>> subscribed = new ConcurrentHashMap<String, Map<String, String>>();
 
-    // 已通知的服务
     // Map<serviceName, Map<url, queryString>>
+    /**
+     * 已通知的服务
+     */
     private final ConcurrentMap<String, List<URL>> notified = new ConcurrentHashMap<String, List<URL>>();
     
-    // 已订阅服务的监听器列表
     // Map<serviceName, List<notificationListener>>
+    /**
+     * 已订阅服务的监听器列表（观察者）
+     */
     private final ConcurrentMap<String, List<NotifyListener>> notifyListeners = new ConcurrentHashMap<String, List<NotifyListener>>();
     
     public void register(URL url) {
         if (logger.isInfoEnabled()) {
             logger.info("Register service: " + url.getServiceKey() + ",url:" + url);
         }
-        register(url.getServiceKey(), url);
+        register(url.getServiceKey(), url);// 实际注册服务的逻辑
     }
 
     public void unregister(URL url) {
@@ -88,17 +96,20 @@ public abstract class AbstractRegistryService implements RegistryService {
     }
 
     public void register(String service, URL url) {
+        // 参数校验
         if (service == null) {
             throw new IllegalArgumentException("service == null");
         }
         if (url == null) {
             throw new IllegalArgumentException("url == null");
         }
+        // 先从已注册的服务缓存中查找，找不到则把服务放进缓存列表
         List<URL> urls = registered.get(service);
         if (urls == null) {
             registered.putIfAbsent(service, new CopyOnWriteArrayList<URL>());
             urls = registered.get(service);
         }
+        // 将服务提供者的url放进提供者列表
         if (! urls.contains(url)) {
             urls.add(url);
         }
@@ -155,7 +166,7 @@ public abstract class AbstractRegistryService implements RegistryService {
     
     private void doNotify(String service, List<URL> urls) {
         notified.put(service, urls);
-        List<NotifyListener> listeners = notifyListeners.get(service);
+        List<NotifyListener> listeners = notifyListeners.get(service);// 获取该服务的所有观察者
         if (listeners != null) {
             for (NotifyListener listener : listeners) {
                 try {

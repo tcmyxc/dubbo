@@ -15,17 +15,17 @@
  */
 package com.alibaba.dubbo.registry.support;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.NetUtils;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.rpc.RpcContext;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * SimpleRegistryService
@@ -36,6 +36,9 @@ public class SimpleRegistryService extends AbstractRegistryService {
 
     private final ConcurrentMap<String, ConcurrentMap<String, URL>> remoteRegistered = new ConcurrentHashMap<String, ConcurrentMap<String, URL>>();
 
+    /**
+     * 观察者
+     */
     private final ConcurrentMap<String, ConcurrentMap<String, NotifyListener>> remoteListeners = new ConcurrentHashMap<String, ConcurrentMap<String, NotifyListener>>();
     
     private final static Logger logger = LoggerFactory.getLogger(SimpleRegistryService.class);
@@ -45,7 +48,7 @@ public class SimpleRegistryService extends AbstractRegistryService {
     @Override
     public void register(String service, URL url) {
         super.register(service, url);
-        String client = RpcContext.getContext().getRemoteAddressString();
+        String client = RpcContext.getContext().getRemoteAddressString();// 获取client地址（ip:port）
         Map<String, URL> urls = remoteRegistered.get(client);
         if (urls == null) {
             remoteRegistered.putIfAbsent(client, new ConcurrentHashMap<String, URL>());
